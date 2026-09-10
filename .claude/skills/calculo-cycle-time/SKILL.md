@@ -73,21 +73,25 @@ real.
 20/11, 25/12, 04/06 (Corpus Christi). Fins de semana são sempre não-úteis,
 independente desta lista.
 
-## O que ainda precisa de confirmação
+## Confirmado por Gláucia (09/2026)
 
-1. **Lista de estados "de execução"** — a lista acima (`Active, In
-   Development, In Progress, Doing, Em andamento`) foi dada como exemplo
-   ("etc."). Pode não cobrir todo tipo/projeto — se um item nunca passar por
-   nenhum desses nomes, ele fica sem Cycle Time calculável (mas ainda entra
-   no Lead Time). Ampliar a lista conforme surgirem casos.
-2. **Campo `Microsoft.VSTS.CMMI.Blocked`** — não confirmamos ainda quais
-   valores literais indicam bloqueio nesse campo (ex.: "Yes"/"No",
-   "Bloqueado"/vazio). A implementação trata qualquer valor não-vazio e
-   diferente de "No"/"Não" como bloqueio — ajustar se isso gerar falso
-   positivo/negativo.
-3. **"Última entrada em Resolved/Closed"** assume que um item pode reabrir e
-   fechar de novo, e que só a última vez importa. Se isso não bater com a
-   intuição do time (ex.: preferem a primeira vez que fechou), avisar.
+1. **Quando o item passa por Resolved/Closed literalmente**, essas são as
+   datas usadas na contabilização (não a categoria de estado) — é a fonte
+   de verdade sempre que existir. O fallback por categoria (`Completed`) só
+   entra quando o tipo/projeto nunca usa esses nomes literais no histórico.
+2. **Campo de bloqueio**: `Microsoft.VSTS.CMMI.Blocked == "Yes"` (comparação
+   exata, case-insensitive) — qualquer outro valor (`"No"`, vazio, etc.) não
+   conta como bloqueio.
+3. **Confirmado**: usar a **última** entrada em Resolved/Closed (cobre
+   reabertura/retrabalho), não a primeira.
+
+## Ainda em aberto
+
+- **Lista de estados "de execução"** (`Active, In Development, In Progress,
+  Doing, Em andamento`) foi dada como exemplo ("etc."). Pode não cobrir todo
+  tipo/projeto — o script loga quantos itens caíram no fallback por
+  categoria a cada rodada; se esse número for alto, provavelmente falta
+  nome de estado nessa lista.
 
 ## Agregação (mês, squad, vertical, empresa)
 
