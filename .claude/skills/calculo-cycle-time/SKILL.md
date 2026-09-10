@@ -81,10 +81,15 @@ independente desta lista.
 
 ## Confirmado por Gláucia (09/2026)
 
-1. **Quando o item passa por Resolved/Closed literalmente**, essas são as
-   datas usadas na contabilização (não a categoria de estado) — é a fonte
-   de verdade sempre que existir. O fallback por categoria (`Completed`) só
-   entra quando o tipo/projeto nunca usa esses nomes literais no histórico.
+1. **Sem fallback por categoria** (decisão de 09/2026, substitui a regra
+   anterior): Início e Fim só contam quando o item passou **literalmente**
+   por um nome de `EXEC_START_STATES`/`END_STATES` no histórico. Se o
+   tipo/projeto nunca usa esses nomes literais, o item **não entra em
+   nenhum cálculo de tempo** (Cycle Time, Lead Time, MTTR) nem nas contagens
+   (Frequência de Entrega, Defeitos) daquele mês — a categoria de estado
+   (`Completed`/`InProgress`) nunca é usada como substituto. Antes disso o
+   script aproximava pela categoria; foi removido porque escondia itens sem
+   dado confiável em vez de sinalizar a lacuna.
 2. **Campo de bloqueio**: `Microsoft.VSTS.CMMI.Blocked == "Yes"` (comparação
    exata, case-insensitive) — qualquer outro valor (`"No"`, vazio, etc.) não
    conta como bloqueio.
@@ -95,9 +100,18 @@ independente desta lista.
 
 - **Lista de estados "de execução"** (`Active, In Development, In Progress,
   Doing, Em andamento`) foi dada como exemplo ("etc."). Pode não cobrir todo
-  tipo/projeto — o script loga quantos itens caíram no fallback por
-  categoria a cada rodada; se esse número for alto, provavelmente falta
-  nome de estado nessa lista.
+  tipo/projeto — o script loga quantos itens ficaram **fora do cálculo** por
+  falta de estado literal a cada rodada; se esse número for alto,
+  provavelmente falta nome de estado nessa lista (e não indica bug, já que
+  não há mais fallback pra mascarar isso).
+- **Cauda longa observada mesmo sem fallback e sem o lote de 25/08/2026**:
+  alguns itens ficam com Cycle Time de centenas de dias (ex.: item concluído
+  com >200 dias úteis entre execução e fim, quase sem hora bloqueada
+  registrada no intervalo) — não sabemos ainda se é trabalho real
+  intermitente, card esquecido no board, ou Area Path/squad mal atribuído.
+  Média e mediana divergem bastante nesses meses (ver dashboard, filtro
+  "Duração" na tabela de itens) — considerar reportar mediana ao lado da
+  média nos indicadores executivos.
 
 ## Agregação (mês, squad, vertical, empresa)
 
