@@ -107,7 +107,7 @@ Ver `reference/config.example.json`. Resumo:
 | `CycleTimeHorasUteis` | float / nulo | Horas úteis entre início e fim |
 | `CycleTimeDiasUteis` | float / nulo | `CycleTimeHorasUteis / 8` |
 | `DataInicioCycleTime` | datetime / nulo | Instante da primeira entrada em execução |
-| `DataFimCycleTime` | datetime / nulo | Instante da entrada em status final |
+| `DataFimCycleTime` | datetime / nulo | Instante da 1ª entrada em status final (Resolved/Closed) **após** `DataInicioCycleTime` |
 | `TipoCycleTime` | "Valor" \| "Issue" \| nulo | Classificação do indicador |
 | `CycleTimeValido` | bool | Se o resultado pode entrar em agregações |
 | `MotivoInvalidacao` | string / nulo | Motivo quando `CycleTimeValido = false` |
