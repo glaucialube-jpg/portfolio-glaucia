@@ -43,6 +43,30 @@ work item e por projeto (ver skill `tfs-devices-ndd`), mas a categoria
 (`Proposed/InProgress/Resolved/Completed/Removed`) é padronizada pelo TFS.
 Isso evita ter que manter uma lista de nomes de estado por tipo/projeto.
 
+## PENDENTE — descontos no tempo bruto (apontado por Gláucia em 09/2026)
+
+A fórmula acima usa o tempo corrido "cru" entre duas datas. Isso **infla**
+Cycle Time, Lead Time e MTTR sempre que o item ficou parado por um motivo que
+não deveria contar como "trabalho em andamento". Ainda não implementado —
+precisa definir com o time antes de calcular:
+
+1. **Tempo de bloqueio/impedimento** — existe algum estado (ex. "Blocked",
+   "Impedido") ou campo (`Microsoft.VSTS.CMMI.Blocked` apareceu na lista de
+   campos do Orbix) que marca isso? Se sim, subtrair o tempo nesse estado do
+   Cycle/Lead Time do item.
+2. **Tags de espera** — ex. "aguardando terceiro", "aguardando cliente".
+   Precisamos saber quais tags a ndd usa pra isso e se elas têm data de
+   início/fim rastreável (via `/updates`, como fazemos pra estado) ou só o
+   nome da tag (sem tempo associado, o que dificultaria descontar).
+3. **Fins de semana e feriados** — hoje é tudo em dias corridos. Se o pedido
+   for dias úteis, precisa de um calendário de feriados da ndd (nacionais +
+   locais, se houver) pra excluir da contagem, não só sáb/dom.
+
+Enquanto isso não for resolvido, todo número de Cycle Time/Lead Time/MTTR no
+dashboard deve vir acompanhado de um aviso de que é uma **média** e de que
+esses descontos ainda não foram aplicados (o dashboard já faz isso na aba
+"Racional dos Indicadores" e nos cards de Eficiência/Qualidade).
+
 Itens cujo estado final é categoria `Removed` (cancelados) **não** entram no
 cálculo — não são "concluídos".
 
