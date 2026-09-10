@@ -1,0 +1,32 @@
+{
+  "calendar": {
+    "work_start": "08:00",
+    "work_end": "17:00",
+    "lunch_start": "12:00",
+    "lunch_end": "13:00",
+    "business_weekdays": ["mon", "tue", "wed", "thu", "fri"],
+    "holidays": [
+      "2024-01-01",
+      "2024-04-21",
+      "2024-05-01",
+      "2024-09-07",
+      "2024-11-15",
+      "2024-12-25"
+    ]
+  },
+  "statuses": {
+    "execution_statuses": [
+      "Active",
+      "In Development",
+      "In Progress",
+      "Doing",
+      "Em andamento"
+    ],
+    "final_statuses": ["Resolved", "Closed"]
+  },
+  "types": {
+    "value_types": ["Sprint Task", "User Story", "Spike"],
+    "issue_types": ["Issue"]
+  },
+  "min_valid_business_days": 0.01
+}
