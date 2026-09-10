@@ -52,6 +52,12 @@ Tempo bloqueado = soma dos intervalos em que, no histórico do item:
     Cada intervalo vai do momento em que a condição de bloqueio passou a
     valer até o momento em que deixou de valer (ou até o "Fim" do item, se
     ainda estava bloqueado quando concluiu).
+    IMPORTANTE (bug corrigido em 09/2026): tag e campo são combinados com OU
+    — o item só volta a "não bloqueado" quando NENHUMA das duas condições
+    vale mais. Se a tag for removida antes do campo (ou vice-versa), o
+    bloqueio continua até a segunda remoção. A primeira versão do código
+    fechava o intervalo assim que qualquer uma das duas fontes indicasse
+    "não bloqueado", subcontando o tempo de bloqueio nesses casos.
 
 Horas úteis brutas = horas úteis entre Início e Fim
     (08:00–17:00, descontando 1h de almoço → 8h úteis/dia; sáb/dom não
