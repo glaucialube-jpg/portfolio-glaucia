@@ -72,19 +72,37 @@ e "em andamento" = primeira transição para categoria `InProgress`, consultando
 `/_apis/wit/workitemtypes/{tipo}/states` por (projeto, tipo). Itens com estado
 final de categoria `Removed` (cancelados) não contam como concluídos.
 
-## Squad — ainda em aberto
+## Squad — resolvido em 09/2026: é o ÚLTIMO nível do Area Path
 
 Não existe campo customizado de Squad/Time no TFS (`Custom.WorkArea` está
-sempre vazio nos itens testados). A extração hoje usa o primeiro nível do
-**Area Path** abaixo do projeto (`Orbix\Platform\...` → squad = `Platform`),
-mas na prática quase todo o volume caiu num único nó genérico
-("Produtos Geral"), então essa divisão não está sendo útil ainda.
+sempre vazio nos itens testados) — o squad é inferido do **Area Path**, mas
+**não é o primeiro nível após o projeto** (isso era o bug: usar `parts[1]`
+fazia quase tudo cair num nó intermediário genérico, "Produtos Geral").
 
-Existe um dashboard paralelo em Excel/Power Query (bases `BASE_MAE_TFS` /
-`BASE_RELACOES_TFS`) que já tem uma coluna "time responsável" — **ainda não
-sabemos se ela vem de um campo do TFS (ex. AssignedTo) ou de um mapeamento
-manual mantido à parte**. Confirmar isso antes de tentar de novo uma divisão
-por squad no `extract_tfs_metrics.py`.
+Confirmado cruzando a planilha de referência da ndd (aba `Base_CycleTime`,
+coluna `Time`) com `BASE_MAE_TFS.AreaPath` pelo `WorkItemId`: o squad real é
+o **último segmento** do Area Path, qualquer que seja a profundidade —
+7.906 de 7.912 itens batem (99,9%; os 6 restantes parecem exceções manuais
+na planilha, não um padrão diferente). Area Path varia de 1 a 4+ níveis:
+
+| Area Path | Squad (último nível) |
+|---|---|
+| `Orbix\Printer Management` | Printer Management |
+| `Orbix\Platform\Cross Platform` | Cross Platform |
+| `Orbix Geral\Produtos Geral\Web Printer Apps` | Web Printer Apps |
+| `Orbix Geral\Produtos Geral\Printer Management\Device Metrics` | Device Metrics |
+| `Orbix Geral` (sem subpath) | Orbix Geral |
+
+Implementado em `resolve_squad()`: pega o último elemento não-vazio do split
+por `\`. Squads reais confirmados na planilha de referência (34 distintos):
+Portal, Supply, Printers - Users, Platform, Security Champion, Print
+Services, Monitoring, Agents, Thermal, Web Printer Apps, ASM, CS, Printers,
+Accounting, Computer Agent, Computer, Produtos Geral, Produto, Printer
+Management, Devops, Embedded Printer Apps, Device Metrics, Automated
+Services Management, Print Control, GC, Computer Insights, Qualidade,
+Automation Devices Management, Core Engineering, entre outros — bem mais
+granular do que os ~12 valores vistos antes da correção (que eram, na
+maioria, os nós intermediários errados).
 
 ## Cuidados de qualidade de dado observados
 
