@@ -39,19 +39,42 @@ mesmo estando na mesma coleção. Não assumir que um nome de tipo é igual entr
 | "Entrega de valor" (equivalente a User Story) | `PBI` | `User Story` |
 | "Descoberta/exploração" (equivalente a Spike) | `Discovery` | `Spike` |
 | Defeito em produção | `Issue` | `Issue` |
-| Defeito pré-release / downstream | `Bug` | `Bug` |
+| Defeito pré-release / downstream (item de Qualidade, não é "defeito em produção") | `Bug` | `Bug` |
 
 **Importante**: `Bug` ≠ defeito em produção. Confirmado com a ndd:
-- `Issue` = problema relatado em produção (o que entra em "Defeitos em Produção" / MTTR do dashboard).
-- `Bug` = achado em tempo de desenvolvimento/downstream, antes do release. Não deve
-  contar como "defeito em produção" — incluí-lo infla os números artificialmente
-  (chegou a 1396 "bugs" concluídos num único mês, muito acima do que fazia sentido).
+- `Issue` = problema relatado em produção (o que entra em "Defeitos em Produção" / Tempo de Correção do dashboard — **só Issue**, nunca Bug).
+- `Bug` = achado em tempo de desenvolvimento/downstream, antes do release. Não conta
+  como "defeito em produção", mas **tem indicador próprio no pilar Qualidade**
+  (chegou a 1396 "bugs" concluídos num único mês, muito acima do que fazia sentido —
+  por isso vale acompanhar como item de Qualidade separado, não misturado com Issue).
+
+### "Itens de Valor" — redefinido em 09/2026: universal, base toda, sem exceção
+
+Decisão revisada por Gláucia em 09/2026 (substitui o mapeamento por projeto acima
+*só para fins de Frequência de Entrega/Produtividade* — a tabela acima continua
+valendo para "Entrega de valor equivalente a User Story" caso a caso, mas o
+recorte de **Produtividade** agora é um conjunto fixo de tipos, aplicado à base
+toda, os dois projetos juntos, sem excluir nenhum item que se encaixe:
+
+```
+Itens de Valor = Story, User Story, Sprint Task, Spike, PBI
+```
+
+Isso **inclui `Sprint Task`**, que a versão anterior desta skill excluía
+deliberadamente ("para evitar dupla contagem com User Story/Spike" — ver
+histórico). Gláucia confirmou que essa é a definição correta pra Produtividade;
+mantenho aqui o alerta que ainda não foi validado com o time: se `Sprint Task`
+for, na prática, sub-item/filho de uma `User Story`/`Spike` na hierarquia do
+TFS (não confirmado), incluir os dois no mesmo recorte pode contar a mesma
+entrega duas vezes. Vale confirmar com o time antes de reportar Frequência de
+Entrega como número "fechado" pro executivo. `Story` e `PBI` hoje têm zero
+itens concluídos no período observado (Abr–Ago/26) — inclusão é defensiva, sem
+efeito prático ainda.
 
 `Orbix Geral` também tem uma quantidade grande de tipos legados/ad-hoc (`Product
-Backlog Item UX`, `Product Backlog Item Compliance0`, `Sprint Task`, `Tasks
-Produto`, etc.) — não incluídos na "Entrega de Valor" para evitar dupla contagem
-com `User Story`/`Spike`. Revisar se algum desses deveria entrar, caso apareçam
-com volume relevante no futuro.
+Backlog Item UX`, `Product Backlog Item Compliance0`, `Tasks Produto`, etc.) —
+continuam fora de "Itens de Valor". Revisar se algum desses deveria entrar,
+caso apareçam com volume relevante no futuro.
 
 Para descobrir a taxonomia de um projeto novo (nunca assumir por analogia):
 ```
