@@ -1,9 +1,5 @@
 {
   "calendar": {
-    "work_start": "08:00",
-    "work_end": "17:00",
-    "lunch_start": "12:00",
-    "lunch_end": "13:00",
     "business_weekdays": ["mon", "tue", "wed", "thu", "fri"],
     "holidays": [
       "2024-01-01",
@@ -12,21 +8,67 @@
       "2024-09-07",
       "2024-11-15",
       "2024-12-25"
-    ]
+    ],
+    "journey_blocks": [
+      ["08:00", "12:00"],
+      ["13:30", "17:30"]
+    ],
+    "_nota": "Em produção, dias úteis vêm de uma tabela de calendário oficial (hoje 249 dias úteis / 365). Se essa tabela estiver disponível como lista de datas, injete-a em explicit_business_dates para bater 1:1 em vez de recomputar feriados aqui."
   },
-  "statuses": {
-    "execution_statuses": [
+  "active_states": {
+    "_nota": "config_active_hours_states em produção tem 38 estados. Lista abaixo é representativa — complete com a tabela oficial.",
+    "states": [
       "Active",
       "In Development",
-      "In Progress",
+      "Analysis",
+      "In Test",
+      "Development",
+      "Testing",
       "Doing",
+      "In Progress",
+      "Code Review",
       "Em andamento"
+    ]
+  },
+  "wait_states": [
+    "Awaiting Test",
+    "Awaiting Code Review",
+    "Awaiting Analysis",
+    "Awaiting Review",
+    "Ready for Dev"
+  ],
+  "blocking": {
+    "tags": [
+      "Bloqueado",
+      "Bloqueada",
+      "#Bloqueado",
+      "Bloqueado - Ambiente/Infra",
+      "Bloqueado - Definição",
+      "Bloqueado - Outros Times",
+      "Bloqueado - Pendência Técnica",
+      "Bloqueado - Prioridade"
     ],
-    "final_statuses": ["Resolved", "Closed"]
+    "_nota_tags": "Lista oficial tem 13 tags; complete com a tabela config de tags bloqueantes.",
+    "custom_fields": [
+      {
+        "collection": "NDD-PrintCollection",
+        "project": "nddPrint-360",
+        "field": "Ndd.Bloqueio",
+        "pattern": "^Bloqueado"
+      },
+      {
+        "collection": "NDD Orbix",
+        "project": "Orbix Geral",
+        "field": "Custom.Bloqueio",
+        "pattern": "^Bloqueado"
+      }
+    ]
   },
-  "types": {
-    "value_types": ["Sprint Task", "User Story", "Spike"],
-    "issue_types": ["Issue"]
+  "accepted_types": ["Bug", "Issue", "User Story", "Sprint Task", "Spike", "Homologation Item"],
+  "excluded_cycle_time": {
+    "_nota": "config_excluded_cycle_time — hoje vazia em produção. Cada entrada é a chave composta (collection, project, id). Só afeta KPIs da home e throughput, não os relatórios detalhados.",
+    "keys": []
   },
-  "min_valid_business_days": 0.01
+  "min_cycle_time_hours": 0.5,
+  "rounding_decimals": 1
 }
