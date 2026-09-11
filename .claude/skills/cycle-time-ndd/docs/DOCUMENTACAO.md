@@ -88,12 +88,19 @@ Detalhes que costumam faltar em reimplementações:
 Um dia útil dentro da janela do ciclo é descontado inteiro (8h) se, nesse
 dia, o item estava bloqueado por qualquer um dos dois mecanismos:
 
-- **Tag bloqueante**: lista configurável (hoje 13 tags: `Bloqueado`,
-  `Bloqueada`, `#Bloqueado`, `Bloqueado - Ambiente/Infra`,
-  `Bloqueado - Definição`, `Bloqueado - Outros Times`,
-  `Bloqueado - Pendência Técnica`, `Bloqueado - Prioridade`, entre
-  outras). Vale o **histórico** de quando a tag esteve presente, não a
-  tag atual do item.
+- **Tag bloqueante**: lista confirmada na tela de configuração de
+  produção ("Tags Bloqueantes (Horas)") — 9 de 4.469 tags distintas:
+  `Bloqueado` (1.796 ocorrências), `#Bloqueado` (32), `Bloqueio` (24),
+  `Bloqueada` (16), `Bloqueado - Ambiente/Infra` (12),
+  `Bloqueado - Prioridade` (11), `Bloqueado - Outros Times` (4),
+  `Bloqueado - Pendência Técnica` (4), `bloque` (1). A comparação é
+  **exata e sensível a maiúsculas/minúsculas** — `bloqueado` em
+  minúsculas (726 ocorrências, mais frequente que várias tags marcadas)
+  está deliberadamente **fora** da lista, junto com
+  `CNTIPO:BLOQUEAR USUÁRIO`, `BlockedPostAttackSecurity`, `#Bloqueada` e
+  `Blocante`. Não amplie essa lista por semelhança textual. Vale o
+  **histórico** de quando a tag esteve presente, não a tag atual do
+  item.
 - **Campo customizado de bloqueio**, por coleção/projeto:
 
   | coleção / projeto | campo | padrão |
@@ -169,7 +176,7 @@ Ver `reference/config.example.json`. Resumo:
 | `calendar.journey_blocks` | Jornada útil (blocos manhã/tarde) | 08:00-12:00, 13:30-17:30 |
 | `active_states` | Estados considerados "em execução" | 38 estados (representativo aqui) |
 | `wait_states` | Estados de fila explícitos | Awaiting Test, Awaiting Code Review, ... |
-| `blocking.tags` | Tags que bloqueiam o item | 13 tags (representativo aqui) |
+| `blocking.tags` | Tags que bloqueiam o item | 9 tags confirmadas, comparação exata/case-sensitive |
 | `blocking.custom_fields` | Campo de bloqueio por (coleção, projeto) | `Ndd.Bloqueio`, `Custom.Bloqueio` |
 | `accepted_types` | Tipos de work item considerados | Bug, Issue, User Story, Sprint Task, Spike, Homologation Item |
 | `excluded_cycle_time` | Chaves `(collection, project, id)` excluídas dos KPIs | vazia |
@@ -274,7 +281,7 @@ cycle_time_zero_para_kpi = true   # sai da média, mas o valor bruto existe
    histórico do campo customizado de bloqueio, `collection`, `project`,
    `id`, `area_path`, `work_item_type`.
 2. Complete `reference/config.example.json` com a tabela real de
-   calendário, os 38 estados ativos reais, as 13 tags bloqueantes reais e
+   calendário, os 38 estados ativos reais (as 9 tags bloqueantes já estão confirmadas) e
    os campos customizados reais — os valores no exemplo são
    representativos, não a lista de produção.
 3. Chame `calculate_metrics(item, config, now)` (Python,

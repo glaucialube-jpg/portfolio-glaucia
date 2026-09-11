@@ -40,15 +40,16 @@
   "blocking": {
     "tags": [
       "Bloqueado",
-      "Bloqueada",
       "#Bloqueado",
+      "Bloqueio",
+      "Bloqueada",
       "Bloqueado - Ambiente/Infra",
-      "Bloqueado - Definição",
+      "Bloqueado - Prioridade",
       "Bloqueado - Outros Times",
       "Bloqueado - Pendência Técnica",
-      "Bloqueado - Prioridade"
+      "bloque"
     ],
-    "_nota_tags": "Lista oficial tem 13 tags; complete com a tabela config de tags bloqueantes.",
+    "_nota_tags": "Lista confirmada na tela de configuração de produção (9 de 4.469 tags distintas). Comparação EXATA e sensível a maiúsculas/minúsculas — 'bloqueado' em minúsculas (726 ocorrências) está deliberadamente fora da lista.",
     "custom_fields": [
       {
         "collection": "NDD-PrintCollection",

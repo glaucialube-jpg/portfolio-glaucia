@@ -75,7 +75,12 @@ confundidas.
 
 4. **Desconto de bloqueio**: um dia útil dentro da janela do ciclo é
    descontado inteiro (8h) se o item estava bloqueado por tag
-   configurável (13 hoje, ex.: `Bloqueado`, `Bloqueado - Ambiente/Infra`)
+   configurável (9 hoje, confirmadas na tela de config: `Bloqueado`,
+   `#Bloqueado`, `Bloqueio`, `Bloqueada`, `Bloqueado - Ambiente/Infra`,
+   `Bloqueado - Prioridade`, `Bloqueado - Outros Times`,
+   `Bloqueado - Pendência Técnica`, `bloque` — comparação EXATA e
+   sensível a maiúsculas/minúsculas: `bloqueado` em minúsculas, apesar de
+   mais frequente, está deliberadamente fora)
    **ou** por campo customizado específico de (coleção, projeto) — ex.
    `Ndd.Bloqueio` em `NDD-PrintCollection/nddPrint-360`, `Custom.Bloqueio`
    em `NDD Orbix/Orbix Geral`, ambos com padrão `^Bloqueado`. Vale o
@@ -127,8 +132,8 @@ confundidas.
    `project`, `id`, `area_path`, `work_item_type`.
 2. Carregue a configuração (`reference/config.example.json` como ponto de
    partida) com a tabela de calendário real, os 38 estados ativos reais,
-   as 13 tags bloqueantes reais, e os campos customizados por
-   coleção/projeto.
+   as 9 tags bloqueantes reais (comparação exata, case-sensitive), e os
+   campos customizados por coleção/projeto.
 3. Rode `calculate_metrics(item, config, now)` (ou a lógica equivalente
    portada) e leia:
    - `lead_time_dias_uteis`
@@ -165,11 +170,13 @@ ficaram implícitas. Esta implementação assumiu:
    de `business_hours_in_interval`), não por dia inteiro — porque a Espera
    não tem a mesma ressalva de "granularidade do bloqueio é o dia" que a
    regra 5 dá para bloqueio.
-4. **Lista de 38 estados ativos e as 13 tags bloqueantes**: o enunciado dá
-   a contagem e exemplos, mas não a lista completa. `config.example.json`
-   traz um subconjunto representativo com nota explícita — **precisa ser
-   completado com a tabela de configuração real** antes de qualquer
-   comparação numérica com o painel.
+4. **Lista de 38 estados ativos**: o enunciado dá a contagem e exemplos,
+   mas não a lista completa. `config.example.json` traz um subconjunto
+   representativo com nota explícita — **precisa ser completado com a
+   tabela de configuração real** antes de qualquer comparação numérica
+   com o painel. (A lista de tags bloqueantes, diferente dos estados,
+   já foi confirmada — ver regra 4 do bloco de regras acima — e a
+   comparação é exata/case-sensitive, não normalizada.)
 5. **`normalize_team_name`**: assumido que o sufixo `" team"` é removido
    apenas quando está no final do segmento (case-insensitive), não em
    qualquer posição.

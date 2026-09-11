@@ -1,162 +1,205 @@
 ---
 name: calculo-cycle-time
-description: Regras e fórmulas de cálculo de Cycle Time, Lead Time, MTTR e Frequência de Entrega usadas no dashboard "Obeya Engenharia" (Produtividade/Qualidade/Eficiência). Use isso antes de calcular, alterar ou explicar qualquer uma dessas métricas, para manter a definição consistente entre o protótipo, o script de extração e qualquer relatório derivado.
+description: Calcula Lead Time e Cycle Time exatamente como o painel oficial "Indicadores Operacionais DevOps" (BIOperacional) da NDD — substitui a especificação anterior baseada no dashboard "Obeya Engenharia". Use isso antes de calcular, alterar ou explicar Lead Time, Cycle Time, WIP ou Espera, para manter a definição consistente entre o script de extração, o painel e qualquer relatório derivado.
 ---
 
-# Cálculo de Cycle Time e métricas relacionadas
+# Cálculo de Lead Time e Cycle Time (fonte: painel BIOperacional)
 
-Especificação definitiva, confirmada por Gláucia em 09/2026 (substitui a
-versão anterior baseada em "tempo corrido cru"). Aplica-se em dias/horas
-**úteis**, descontando bloqueios.
+Substitui integralmente a especificação anterior desta skill (baseada no
+dashboard "Obeya Engenharia" — MTTR, Frequência de Entrega, calendário de
+feriados 2026 local). A fonte da verdade agora é o painel oficial
+**Indicadores Operacionais DevOps (BIOperacional)**. As regras abaixo são
+essa fonte da verdade. Quando um número não bater com o painel, a causa
+quase sempre é uma destas regras não aplicada, na ordem em que aparecem.
 
-## Definições
+## 1. As duas métricas são diferentes
 
-- **Cycle Time de Valor** — tempo decorrido desde a primeira entrada do card
-  em um status de execução até sua conclusão, em dias úteis. Escopo de tipo:
-  `Sprint Task` + `User Story` + `Spike`.
-- **Cycle Time de Issue** — mesma fórmula, aplicada só ao tipo `Issue`. Isso
-  **substitui** o antigo cálculo de MTTR (não são mais duas fórmulas
-  diferentes) — a chave `mttr_horas` no JSON de saída continua existindo por
-  compatibilidade, mas seu valor agora é o Cycle Time de Issue convertido pra
-  horas (`dias_úteis × 8`).
-- **Lead Time** — mesma lógica de desconto (bloqueio + calendário útil), mas
-  início = **criação** do card, não a primeira execução. `Criação → conclusão
-  = Lead Time`; `Execução → conclusão = Cycle Time`. Nunca usar data de
-  criação para Cycle Time.
-- **Frequência de Entrega** — segue usando o mapeamento por projeto em
-  `TFS_TYPE_MAP_JSON` (skill `tfs-devices-ndd`), que é **diferente** do escopo
-  de tipo do Cycle Time de Valor acima (esse inclui `Sprint Task`, aquele
-  não). São dois recortes propositalmente distintos — não confundir.
+**Lead Time** = `created_date → closed_date`, em dias úteis. Conta a fila
+inteira, não desconta bloqueio nem espera. É o tempo do ponto de vista de
+quem pediu.
 
-## Fórmula
+**Cycle Time** = início do trabalho → `closed_date`, em horas úteis,
+descontando bloqueio. É o tempo do ponto de vista de quem executa.
+
+Não são intercambiáveis e não têm a mesma unidade base. Cycle Time é
+calculado em horas e dividido por 8 quando exibido em dias.
+
+## 2. Início do trabalho (a regra que mais gera divergência)
+
+O início não é simplesmente o `ActivatedDate` do TFS. É:
 
 ```
-Início (execução) = primeira entrada em um estado de execução:
-    Active, In Development, In Progress, Doing, Em andamento (lista pode
-    crescer — cada tipo/projeto pode ter nomes próprios; ver --list-states)
-
-Início (lead time) = System.CreatedDate (criação do card)
-
-Fim = PRIMEIRA entrada em `Resolved` OU `Closed`
-    (nome literal do estado — não é "categoria Completed" do TFS; em alguns
-    templates "Resolved" tem categoria InProgress mas ainda conta como fim
-    aqui. Usamos a PRIMEIRA ocorrência — decisão revisada em 09/2026, ver
-    "Confirmado por Gláucia" abaixo — ignora deliberadamente reabertura e
-    retrabalho depois do primeiro fechamento.)
-
-Tempo bloqueado = soma dos intervalos em que, no histórico do item:
-    - o campo Microsoft.VSTS.CMMI.Blocked indica bloqueio, OU
-    - o campo System.Tags contém alguma destas tags (lista confirmada por
-      Gláucia, 09/2026): Bloqueado, #Bloqueado, Bloqueio, Bloqueado -
-      Prioridade, Bloqueado - Ambiente/Infra, Bloqueado - Outros Times,
-      Bloqueado - Pendência Técnica, "blo", Bloqueada
-    Cada intervalo vai do momento em que a condição de bloqueio passou a
-    valer até o momento em que deixou de valer (ou até o "Fim" do item, se
-    ainda estava bloqueado quando concluiu).
-    IMPORTANTE (bug corrigido em 09/2026): tag e campo são combinados com OU
-    — o item só volta a "não bloqueado" quando NENHUMA das duas condições
-    vale mais. Se a tag for removida antes do campo (ou vice-versa), o
-    bloqueio continua até a segunda remoção. A primeira versão do código
-    fechava o intervalo assim que qualquer uma das duas fontes indicasse
-    "não bloqueado", subcontando o tempo de bloqueio nesses casos.
-
-Horas úteis brutas = horas úteis entre Início e Fim
-    (08:00–17:00, descontando 1h de almoço → 8h úteis/dia; sáb/dom não
-    contam; feriados da tabela abaixo não contam)
-
-Horas úteis líquidas = Horas úteis brutas − horas úteis dentro dos
-    intervalos de bloqueio (interseção com a janela Início–Fim)
-
-Cycle/Lead Time (dias úteis) = Horas úteis líquidas ÷ 8
+inicio = LEAST(activated_date, primeiro_periodo_em_estado_ativo)
 ```
 
-**Filtro de ruído**: resultado ≤ 0,01 dia útil é descartado (não entra na
-média) — normalmente indica transição automática/instantânea, não trabalho
-real.
+O menor dos dois, e `LEAST` ignora nulo: basta um existir. Motivo: cerca
+de 1 em cada 5 itens fechados não tem `ActivatedDate`, porque o TFS só
+carimba esse campo quando o item passa por `Active`, e muito item vai de
+`New` direto para `In Development`, `Analysis` ou `In Test`. Usar só o
+campo descarta esses itens do cálculo.
 
-## Calendário de feriados 2026 (ndd)
+"Estado ativo" vem de uma tabela de configuração
+(`config_active_hours_states`), hoje com 38 estados marcados como ativos.
+Estados de espera (`Awaiting Test`, `Awaiting Code Review`,
+`Awaiting Analysis`, `Awaiting Review`, `Ready for Dev`) não são ativos.
 
-01/01, 03/04 (Paixão de Cristo), 21/04, 01/05, 07/09, 12/10, 02/11, 15/11,
-20/11, 25/12, 04/06 (Corpus Christi). Fins de semana são sempre não-úteis,
-independente desta lista.
+Se início e `closed_date` forem nulos, o item **não tem** cycle time e
+sai da conta. Não vira zero.
 
-## Confirmado por Gláucia (09/2026)
+## 3. Calendário
 
-1. **Sem fallback por categoria** (decisão de 09/2026, substitui a regra
-   anterior): Início e Fim só contam quando o item passou **literalmente**
-   por um nome de `EXEC_START_STATES`/`END_STATES` no histórico — a
-   categoria de estado (`Completed`/`InProgress`) nunca é usada como
-   substituto. Precisão importante: as duas ausências têm efeitos
-   diferentes no cálculo, não são a mesma coisa —
-   - sem **fim** literal (`Resolved`/`Closed`): item inteiro fora de
-     Frequência de Entrega, Defeitos, Cycle Time, Lead Time e MTTR daquele
-     mês (o bucket exige `end_done` pra existir).
-   - sem **início de execução** literal, mas COM fim literal: ainda conta
-     em Frequência de Entrega/Defeitos (o fim é confiável) e em **Lead
-     Time** (que só depende de criação→fim), só fica de fora do **Cycle
-     Time**/**MTTR** (que dependem do início de execução).
-   O JSON de saída carrega `fim_literal_ausente` e
-   `inicio_exec_literal_ausente` separados — não conflatar os dois num
-   único "sem dado" ao consumir o JSON (bug já cometido uma vez no
-   protótipo: o export pro dashboard zerava Lead Time também quando só
-   faltava o início de execução).
-2. **Campo de bloqueio**: `Microsoft.VSTS.CMMI.Blocked == "Yes"` (comparação
-   exata, case-insensitive) — qualquer outro valor (`"No"`, vazio, etc.) não
-   conta como bloqueio.
-3. **Revisado em 09/2026** (substitui a decisão anterior de usar a última
-   entrada): usar a **primeira** entrada em Resolved/Closed, não a última.
-   Motivo: Gláucia trouxe a regra de uma dash anterior dela (Claude Chat,
-   card "O que mede: Tempo útil médio do início ao fim da entrega") já
-   validada contra a outra ferramenta de referência da ndd (~7-8 dias de
-   Cycle Time) — essa dash usa primeira entrada, e ignora deliberadamente
-   o tempo entre um primeiro fechamento e uma reabertura/retrabalho
-   posterior. Provável explicação da cauda longa (itens com >200 dias
-   úteis) documentada abaixo — a confirmar depois do reprocessamento com
-   essa regra.
+`dias_úteis` vem de uma tabela de calendário, não de uma regra de
+"segunda a sexta". Hoje: 249 dias úteis em 365, ou seja, feriados já
+estão descontados.
 
-## Ainda em aberto
+Jornada: **08:00-12:00 e 13:30-17:30**, que é o dia útil de 8 horas usado
+na conversão.
 
-- **Lista de estados "de execução"** (`Active, In Development, In Progress,
-  Doing, Em andamento`) foi dada como exemplo ("etc."). Pode não cobrir todo
-  tipo/projeto — o script loga quantos itens ficaram **fora do cálculo** por
-  falta de estado literal a cada rodada; se esse número for alto,
-  provavelmente falta nome de estado nessa lista (e não indica bug, já que
-  não há mais fallback pra mascarar isso).
-- **Cauda longa observada com a regra antiga (última entrada em
-  Resolved/Closed)**: alguns itens tinham Cycle Time de centenas de dias
-  (ex.: WI-208 com 227,7d, WI-598 com 265,2d), quase sem hora bloqueada
-  registrada no intervalo. Hipótese mais provável, levantada por Gláucia:
-  eram itens reabertos, e a regra antiga contava até o fechamento final, não
-  o primeiro. Com a mudança pra "primeira entrada" (item 3 acima), o
-  esperado é que essa cauda encolha bastante — falta confirmar com os dados
-  reprocessados. Mesmo assim, considerar reportar mediana ao lado da média
-  nos indicadores executivos — outliers legítimos (não só reabertura) ainda
-  podem existir.
-- **Desconto de tempo bloqueado — mantido apesar da dash de referência não
-  descontar**: a dash de referência que validou "primeira entrada" (09/2026)
-  não desconta bloqueio; decidimos manter o desconto aqui mesmo assim,
-  porque é metodologicamente mais correto (não penaliza o time por espera
-  externa) e o impacto no número final costuma ser pequeno perto do efeito
-  de primeira-vs-última entrada. Se o Cycle Time reprocessado ainda não
-  bater com a outra ferramenta, esse é o próximo lugar a olhar.
+## 4. Fórmula do Cycle Time
 
-## Agregação (mês, squad, vertical, empresa)
+```
+SE closed_date é nulo           -> NULO (item aberto não tem cycle time, tem WIP)
+SE início é nulo                -> NULO
+SE início e fechamento no MESMO DIA -> diferença bruta em horas (epoch / 3600)
+SENÃO                           -> MAIOR(0,5 ;
+                                     dias_úteis(início, fechamento] × 8
+                                   + (hora:min do fechamento − hora:min do início)
+                                   − horas_bloqueadas)
+```
 
-- Cada work item concluído é agrupado num bucket `(vertical, squad, mês)`
-  pelo mês de **conclusão**.
-- Dentro de um bucket, cada métrica de tempo é a **média simples** dos itens
-  daquele bucket (depois do filtro de ruído). Contagens (Frequência de
-  Entrega, Defeitos) são somadas.
-- Ao subir de squad → vertical → empresa, as contagens são somadas, mas os
-  tempos médios viram **média das médias dos squads**, não ponderada pelo
-  volume. Considerar média ponderada se isso distorcer a leitura executiva.
-- Itens cujo estado final é categoria `Removed` (cancelados) não entram em
-  nenhum cálculo.
+Três detalhes que costumam faltar:
+
+- A contagem de dias úteis é **exclusiva no início e inclusiva no fim**:
+  `> data_início AND <= data_fechamento`.
+- O piso de 0,5 hora existe para item multi-dia não virar zero depois do
+  desconto de bloqueio.
+- Mesmo dia é diferença bruta, sem calendário e sem desconto de
+  bloqueio, porque a granularidade do bloqueio é o dia.
+
+## 5. Desconto de bloqueio
+
+Um dia útil dentro da janela do ciclo é descontado inteiro (8 horas) se
+naquele dia o item estava bloqueado por qualquer um dos dois mecanismos:
+
+**Tag bloqueante** — lista configurável. Confirmado na tela de
+configuração de produção ("Tags Bloqueantes (Horas)"), hoje **9 tags**
+marcadas, de um universo de 4.469 tags distintas usadas na base:
+
+| Tag | Ocorrências |
+|---|---|
+| `Bloqueado` | 1.796 |
+| `#Bloqueado` | 32 |
+| `Bloqueio` | 24 |
+| `Bloqueada` | 16 |
+| `Bloqueado - Ambiente/Infra` | 12 |
+| `Bloqueado - Prioridade` | 11 |
+| `Bloqueado - Outros Times` | 4 |
+| `Bloqueado - Pendência Técnica` | 4 |
+| `bloque` | 1 |
+
+**A comparação é sensível a maiúsculas/minúsculas (case-sensitive), com
+correspondência exata da tag** — não um "contém" nem uma normalização por
+`casefold`. Prova disso na própria tela: `bloqueado` em minúsculas (726
+ocorrências — mais frequente que várias das marcadas!) está **desmarcada**
+e não conta como bloqueio, assim como `CNTIPO:BLOQUEAR USUÁRIO`,
+`BlockedPostAttackSecurity`, `#Bloqueada` e `Blocante`. Não amplie essa
+lista por semelhança textual (ex.: não tratar `Bloqueada` e `#Bloqueada`
+como equivalentes) — só as 9 tags marcadas acima contam, exatamente como
+grafadas.
+
+Vale o **histórico** de quando a tag esteve presente, não a tag atual do
+item.
+
+**Campo customizado de bloqueio**, por coleção e projeto:
+
+| coleção / projeto | campo | padrão |
+|---|---|---|
+| `NDD-PrintCollection` / `nddPrint-360` | `Ndd.Bloqueio` | `^Bloqueado` |
+| `NDD Orbix` / `Orbix Geral` | `Custom.Bloqueio` | `^Bloqueado` |
+
+Dois cuidados:
+
+- O desconto conta **dias distintos**. Dia coberto pela tag e pelo campo
+  é descontado uma vez, não duas.
+- O período do campo tem trava no fechamento:
+  `MENOR(fim_do_bloqueio, closed_date, agora)`. Sem isso, item fechado
+  com o campo nunca zerado acumularia bloqueio infinito.
+
+## 6. Exclusões
+
+Existe uma lista de itens excluídos do cycle time
+(`config_excluded_cycle_time`), hoje vazia. Quando usada, vale só nos
+KPIs da home e no throughput, não nos relatórios detalhados. São duas
+variantes da mesma métrica.
+
+Nos KPIs há ainda um `NULLIF(valor, 0)`: item cujo cycle time arredonda
+para zero é tratado como nulo e sai da média. São itens fechados em
+segundos, sem ciclo real.
+
+## 7. Métricas irmãs, para não confundir
+
+**WIP** = início do trabalho → agora, mesmo calendário e mesmo desconto
+de bloqueio. Só existe em item aberto. Cycle Time e WIP são mutuamente
+exclusivos: um dos dois é sempre nulo. Nunca somar os dois na mesma
+estatística.
+
+**Espera** = dias úteis da janela do ciclo em que o item esteve em
+estado não marcado como ativo (fila). Anda ao lado do cycle time, não é
+descontada dele. Cycle time é tempo decorrido, fila inclusa; quem tira a
+fila é o Touch Time da Eficiência de Fluxo.
+
+## 8. Arredondamento e média
+
+Por item: arredonda para 1 casa decimal.
+
+Na média: converte para decimal exato antes de somar (`DECIMAL(18,1)`),
+não soma em ponto flutuante. Em ponto flutuante uma média que cai em
+`.x5` sai como `2,3499999` e arredonda para baixo, oscilando entre
+execuções.
+
+O arredondamento é meio para cima: exatos `2,35` viram `2,4`.
+
+## 9. Recorte e filtros
+
+- O período filtra por `closed_date` em Lead Time e Cycle Time. O
+  Dashboard de Bugs filtra por `created_date`, e a tabela de
+  detalhamento ordena por `changed_date`.
+- Tipos considerados por padrão: `Bug`, `Issue`, `User Story`,
+  `Sprint Task`, `Spike`, `Homologation Item`. Tipo não ativado não
+  entra em indicador nenhum.
+- Time é resolvido pelo último segmento do `AreaPath`, com uma variação
+  aceita: o sufixo `" team"`.
+- Id de work item é único **por coleção**, não globalmente. Hoje há
+  1.347 ids repetidos entre coleções. Toda junção e todo agrupamento usa
+  a chave completa `(collection, project, id)`. Agrupar só por `id` faz
+  um item herdar dado de outro, sem erro nenhum.
+
+## 10. Teste de aceite
+
+Se a implementação estiver certa, ela reproduz estes números da base de
+produção:
+
+- 39.000 work items, 24.721 com cycle time calculável.
+- Bugs do `nddPrint-360`, cycle médio: 1,93 dias úteis.
+- Espera média dos bugs do `nddPrint-360`: 1,07 dia, ou seja mais da
+  metade do ciclo é fila.
+- Itens fechados sem nenhum início detectável: cerca de 1.900, e eles
+  não entram em nenhuma média.
+
+Se o número der **menor** que o oficial, suspeite primeiro de: início
+usando só `ActivatedDate` (perde 20% dos itens), ou espera sendo
+descontada do ciclo.
+
+Se der **maior**, suspeite de: bloqueio não descontado (inclusive
+comparação de tag case-insensitive quando deveria ser exata), ou dias
+corridos no lugar de dias úteis.
 
 ## Onde isso está implementado
 
-`extract_tfs_metrics.py`: calendário de feriados e função de horas úteis,
-detecção de intervalos de bloqueio (a partir do histórico de `System.Tags` e
-`Microsoft.VSTS.CMMI.Blocked`), e o cálculo de Cycle Time (Valor/Issue) e
-Lead Time dentro de `build_dataset()`. `mttr_horas` no JSON de saída é hoje
-um alias do Cycle Time de Issue em horas.
+Ver a skill `cycle-time-ndd` para uma implementação de referência
+executável (Python, testável) desta mesma especificação, incluindo Lead
+Time, Cycle Time, WIP e Espera. Se este repositório também mantiver
+`extract_tfs_metrics.py` (ou equivalente) para o painel BIOperacional, a
+lógica de calendário útil, detecção de bloqueio (tag + campo
+customizado, comparação case-sensitive) e a fórmula do Cycle Time devem
+seguir literalmente as regras acima.

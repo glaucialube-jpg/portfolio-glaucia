@@ -102,17 +102,23 @@ class BlockingConfig:
     """Mecanismos de bloqueio: tags configuráveis e um campo customizado
     por (collection, project)."""
 
+    # Lista confirmada na tela de configuração de produção ("Tags
+    # Bloqueantes (Horas)"), 9 de 4.469 tags distintas. A comparação é
+    # sensível a maiúsculas/minúsculas e exata — "bloqueado" em minúsculas
+    # (726 ocorrências) está deliberadamente FORA da lista, apesar de mais
+    # frequente que várias tags marcadas. Nunca ampliar por semelhança.
     tags: frozenset[str] = field(
         default_factory=lambda: frozenset(
             {
                 "Bloqueado",
-                "Bloqueada",
                 "#Bloqueado",
+                "Bloqueio",
+                "Bloqueada",
                 "Bloqueado - Ambiente/Infra",
-                "Bloqueado - Definição",
+                "Bloqueado - Prioridade",
                 "Bloqueado - Outros Times",
                 "Bloqueado - Pendência Técnica",
-                "Bloqueado - Prioridade",
+                "bloque",
             }
         )
     )
@@ -124,13 +130,12 @@ class BlockingConfig:
         }
     )
 
-    @staticmethod
-    def _normalize(value: str) -> str:
-        return value.strip().casefold()
-
     def is_blocking_tag(self, tag: str) -> bool:
-        normalized = {self._normalize(t) for t in self.tags}
-        return self._normalize(tag) in normalized
+        """Correspondência EXATA e sensível a maiúsculas/minúsculas —
+        confirmado em produção que variantes de caixa (ex.: "bloqueado"
+        minúsculo) não contam, mesmo sendo mais frequentes que tags
+        marcadas. Não normalizar aqui."""
+        return tag in self.tags
 
     def field_for(self, collection: str, project: str) -> Optional[tuple[str, str]]:
         return self.custom_fields.get((collection, project))

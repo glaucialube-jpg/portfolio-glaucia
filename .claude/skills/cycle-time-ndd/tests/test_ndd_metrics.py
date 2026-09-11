@@ -100,6 +100,30 @@ class NddMetricsTests(unittest.TestCase):
         self.assertIsNone(result.cycle_time_dias_uteis)
         self.assertFalse(is_valid_for_kpi_average(result))
 
+    # --- regra 5: tags bloqueantes — comparação exata, case-sensitive ---
+
+    def test_lowercase_tag_variant_does_not_block(self):
+        # Confirmado na tela de config de produção: "bloqueado" minúsculo
+        # (726 ocorrências) está desmarcado, mesmo sendo mais frequente
+        # que várias tags marcadas. Não deve ser tratado como bloqueio.
+        item = make_item(
+            activated_date=dt(2024, 1, 8, 8, 0),  # segunda
+            closed_date=dt(2024, 1, 10, 8, 0),  # quarta
+            tag_intervals=[TagInterval("bloqueado", dt(2024, 1, 9, 0, 0), dt(2024, 1, 9, 23, 59))],
+        )
+        result = calculate_metrics(item, self.config)
+        # dias_uteis(seg,qua] = 2 dias -> 16h; sem desconto, pois a tag não bate exatamente.
+        self.assertAlmostEqual(result.cycle_time_horas_uteis, 16.0)
+
+    def test_exact_case_tag_does_block(self):
+        item = make_item(
+            activated_date=dt(2024, 1, 8, 8, 0),
+            closed_date=dt(2024, 1, 10, 8, 0),
+            tag_intervals=[TagInterval("Bloqueado", dt(2024, 1, 9, 0, 0), dt(2024, 1, 9, 23, 59))],
+        )
+        result = calculate_metrics(item, self.config)
+        self.assertAlmostEqual(result.cycle_time_horas_uteis, 8.0)
+
     # --- regra 4: fórmula do Cycle Time ---
 
     def test_same_day_is_raw_difference(self):
